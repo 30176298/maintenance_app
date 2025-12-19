@@ -1,0 +1,81 @@
+CREATE TABLE Aircraft (
+    id TEXT PRIMARY KEY NOT NULL,
+    registration TEXT NOT NULL UNIQUE,
+    make TEXT NOT NULL,
+    model TEXT NOT NULL,
+    serialNumber TEXT NOT NULL,
+    yearOfManufacture INTEGER,
+    totalHours REAL NOT NULL DEFAULT 0.0,
+    totalCycles INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+CREATE TABLE MaintenanceEvent (
+    id TEXT PRIMARY KEY NOT NULL,
+    aircraftId TEXT NOT NULL,
+    date INTEGER NOT NULL,
+    hoursAtMaintenance REAL NOT NULL,
+    cyclesAtMaintenance INTEGER NOT NULL,
+    maintenanceType TEXT NOT NULL,
+    description TEXT NOT NULL,
+    technicianName TEXT NOT NULL,
+    technicianCertification TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (aircraftId) REFERENCES Aircraft(id) ON DELETE CASCADE
+);
+
+-- Queries for Aircraft
+selectAllAircraft:
+SELECT * FROM Aircraft ORDER BY registration ASC;
+
+selectAircraftById:
+SELECT * FROM Aircraft WHERE id = ?;
+
+selectAircraftByRegistration:
+SELECT * FROM Aircraft WHERE registration = ?;
+
+insertAircraft:
+INSERT INTO Aircraft (id, registration, make, model, serialNumber, yearOfManufacture, totalHours, totalCycles, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateAircraft:
+UPDATE Aircraft
+SET registration = ?, make = ?, model = ?, serialNumber = ?, yearOfManufacture = ?, totalHours = ?, totalCycles = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteAircraft:
+DELETE FROM Aircraft WHERE id = ?;
+
+-- Queries for MaintenanceEvent
+selectAllMaintenanceEvents:
+SELECT * FROM MaintenanceEvent ORDER BY date DESC;
+
+selectMaintenanceEventsByAircraftId:
+SELECT * FROM MaintenanceEvent WHERE aircraftId = ? ORDER BY date DESC;
+
+selectMaintenanceEventById:
+SELECT * FROM MaintenanceEvent WHERE id = ?;
+
+insertMaintenanceEvent:
+INSERT INTO MaintenanceEvent (id, aircraftId, date, hoursAtMaintenance, cyclesAtMaintenance, maintenanceType, description, technicianName, technicianCertification, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateMaintenanceEvent:
+UPDATE MaintenanceEvent
+SET date = ?, hoursAtMaintenance = ?, cyclesAtMaintenance = ?, maintenanceType = ?, description = ?, technicianName = ?, technicianCertification = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteMaintenanceEvent:
+DELETE FROM MaintenanceEvent WHERE id = ?;
+
+
+
+-- Get latest maintenance event for an aircraft
+selectLatestMaintenanceByAircraftId:
+SELECT * FROM MaintenanceEvent WHERE aircraftId = ? ORDER BY date DESC LIMIT 1;
+
+-- Count maintenance events per aircraft
+countMaintenanceEventsByAircraftId:
+SELECT COUNT(*) FROM MaintenanceEvent WHERE aircraftId = ?;

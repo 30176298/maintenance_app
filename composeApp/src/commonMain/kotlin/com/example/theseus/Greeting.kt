@@ -1,4 +1,4 @@
-package com.example.demo1
+package com.example.theseus
 
 class Greeting {
     private val platform = getPlatform()

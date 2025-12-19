@@ -1,4 +1,4 @@
-package com.example.demo1
+package com.example.theseus
 
 class JVMPlatform : Platform {
     override val name: String = "Java ${System.getProperty("java.version")}"

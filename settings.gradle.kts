@@ -1,4 +1,4 @@
-rootProject.name = "demo1"
+rootProject.name = "theseus"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

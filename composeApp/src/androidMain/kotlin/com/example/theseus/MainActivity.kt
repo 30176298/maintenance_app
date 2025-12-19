@@ -1,4 +1,4 @@
-package com.example.demo1
+package com.example.theseus
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

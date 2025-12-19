@@ -1,4 +1,4 @@
-package com.example.demo1
+package com.example.theseus
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,4 +1,4 @@
-package com.example.demo1
+package com.example.theseus
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -16,8 +16,8 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-import demo1.composeapp.generated.resources.Res
-import demo1.composeapp.generated.resources.compose_multiplatform
+import theseus.composeapp.generated.resources.Res
+import theseus.composeapp.generated.resources.compose_multiplatform
 
 @Composable
 @Preview

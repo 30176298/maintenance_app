@@ -1,49 +1,74 @@
 package com.example.theseus
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-
-import theseus.composeapp.generated.resources.Res
-import theseus.composeapp.generated.resources.compose_multiplatform
+import com.example.theseus.presentation.aircraft.AircraftListScreen
+import com.example.theseus.presentation.dashboard.DashboardScreen
+import com.example.theseus.presentation.navigation.Screen
 
 @Composable
-@Preview
 fun App() {
     MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+        var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
+        var aircraftIdParam by remember { mutableStateOf<String?>(null) }
+
+        TheseusNavigation(
+            currentScreen = currentScreen,
+            aircraftIdParam = aircraftIdParam,
+            onNavigate = { screen, param ->
+                currentScreen = screen
+                aircraftIdParam = param
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
+        )
+    }
+}
+
+@Composable
+fun TheseusNavigation(
+    currentScreen: Screen,
+    aircraftIdParam: String?,
+    onNavigate: (Screen, String?) -> Unit
+) {
+    when (currentScreen) {
+        Screen.Dashboard -> DashboardScreen(
+            onNavigateToAircraftList = { onNavigate(Screen.AircraftList, null) },
+            onNavigateToAircraft = { id -> onNavigate(Screen.AircraftDetail, id) }
+        )
+        Screen.AircraftList -> AircraftListScreen(
+            onNavigateBack = { onNavigate(Screen.Dashboard, null) },
+            onNavigateToDetail = { id -> onNavigate(Screen.AircraftDetail, id) },
+            onNavigateToAdd = { onNavigate(Screen.AddAircraft, null) }
+        )
+        Screen.AircraftDetail -> {
+            aircraftIdParam?.let { id ->
+                com.example.theseus.presentation.aircraft.AircraftDetailScreen(
+                    aircraftId = id,
+                    onNavigateBack = { onNavigate(Screen.AircraftList, null) },
+                    onNavigateToMaintenance = { onNavigate(Screen.MaintenanceLog, id) }
+                )
             }
+        }
+        Screen.AddAircraft -> {
+            com.example.theseus.presentation.aircraft.AddAircraftScreen(
+                onNavigateBack = { onNavigate(Screen.AircraftList, null) },
+                onAircraftAdded = { id -> onNavigate(Screen.AircraftDetail, id) }
+            )
+        }
+        Screen.MaintenanceLog -> {
+            aircraftIdParam?.let { id ->
+                com.example.theseus.presentation.maintenance.MaintenanceLogScreen(
+                    aircraftId = id,
+                    onNavigateBack = { onNavigate(Screen.AircraftDetail, id) }
+                )
+            }
+        }
+        Screen.AllMaintenanceLog -> {
+            com.example.theseus.presentation.maintenance.MaintenanceLogScreen(
+                aircraftId = null,
+                onNavigateBack = { onNavigate(Screen.Dashboard, null) }
+            )
         }
     }
 }

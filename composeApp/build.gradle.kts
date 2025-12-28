@@ -11,6 +11,35 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
+configurations.all {
+    resolutionStrategy {
+        //Backdate fix
+        //force(libs.androidx.savedstate.kmp.get())
+        //force(libs.androidx.savedstate.android.get())
+    }
+}
+
+configurations.all {
+    if (name.contains("desktop", ignoreCase = true) || name.contains("jvm", ignoreCase = true)) {
+        resolutionStrategy {
+            // Force the JetBrains version specifically for the desktop runtime
+            force("org.jetbrains.compose.ui:ui-util:1.8.0")
+
+            // Optionally, substitute the androidx version to prevent it from sneaking in
+            dependencySubstitution {
+                substitute(module("androidx.compose.ui:ui-util"))
+                    .using(module("org.jetbrains.compose.ui:ui-util:1.8.0"))
+            }
+        }
+    }
+    else {
+        resolutionStrategy {
+            force("androidx.compose.ui:ui-util:1.8.0")
+        }
+    }
+}
+
+
 kotlin {
     androidTarget {
         compilerOptions {
@@ -24,6 +53,11 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.sqldelight.android.driver)
+            implementation(libs.koin.android)
+            implementation(libs.kotlinx.coroutines.android)
+
+            implementation("androidx.compose.ui:ui-util:1.8.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -32,8 +66,31 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            //implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.androidx.compose.material.icons.core)
+
+            //implementation(libs.androidx.ui.util)
+            //implementation(compose.uiUtil)
+
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.serialization.json)
+
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+
+            //implementation(libs.androidx.lifecycle.viewmodelCompose)
+
+            //Backdate fix
+            //implementation(libs.androidx.savedstate.kmp)
+            //implementation(libs.androidx.savedstate.android)
+
+            implementation("org.jetbrains.compose.ui:ui-util:1.8.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -41,6 +98,11 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.sqldelight.sqlite.driver)
+
+            implementation("org.jetbrains.compose.ui:ui-util:1.8.0") {
+                exclude(group = "androidx.compose.ui", module = "ui-util")
+            }
         }
     }
 }
@@ -84,6 +146,18 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.example.theseus"
             packageVersion = "1.0.0"
+        }
+    }
+}
+
+compose.resources {
+    generateResClass = never
+}
+
+sqldelight {
+    databases {
+        create("TheseusDatabase") {
+            packageName.set("com.example.theseus.database")
         }
     }
 }

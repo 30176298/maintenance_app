@@ -1,5 +1,7 @@
 package com.example.theseus.presentation.dashboard
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,9 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
+import com.example.theseus.data.local.getNativeHttpClient
 import com.example.theseus.domain.model.Aircraft
 import com.example.theseus.presentation.aircraft.AircraftListUiState
 import com.example.theseus.presentation.aircraft.AircraftListViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,6 +27,10 @@ fun DashboardScreen(
     viewModel: AircraftListViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    var responseText by remember { mutableStateOf("Ready") }
+    var isLoading by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -98,6 +108,23 @@ fun DashboardScreen(
                 Text("View All Aircraft")
             }
 
+            Button(
+                onClick = {
+                    Post_test(scope) { result ->
+                        responseText = result
+                        isLoading = false
+                    }
+                    isLoading = true
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            ) {
+                Text(responseText)
+            }
+
+
             if (uiState is AircraftListUiState.Success) {
                 Text(
                     text = "Recent Aircraft",
@@ -154,4 +181,25 @@ fun AircraftSummaryCard(
 
 fun Double.format(decimals: Int): String {
     return "%.${decimals}f".format(this)
+}
+
+
+fun Post_test(scope: CoroutineScope, onResult: (String) -> Unit) : Unit {
+    scope.launch {
+        val client = getNativeHttpClient();
+        try {
+            val _headers = mapOf(
+                "X-API-Key" to "api_warehouse_student_key_1234567890abcdef"
+            )
+
+            val result = client.post(
+                url = "http://127.0.0.1:5000/api/v1/users",
+                body = """{"username":"user2","password":"secret","role":"manager"}""",
+                headers = _headers
+            )
+            onResult("Response: $result")
+        } catch (e: Exception) {
+            onResult("Error: ${e.message}")
+        }
+    }
 }

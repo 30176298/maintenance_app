@@ -193,7 +193,7 @@ fun Post_test(scope: CoroutineScope, onResult: (String) -> Unit) : Unit {
             )
 
             val result = client.post(
-                url = "http://127.0.0.1:5000/api/v1/users",
+                url = "/api/v1/users",
                 body = """{"username":"user2","password":"secret","role":"manager"}""",
                 headers = _headers
             )

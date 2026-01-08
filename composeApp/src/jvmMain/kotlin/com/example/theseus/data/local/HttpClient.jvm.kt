@@ -14,8 +14,9 @@ class JvmNetworkClient : NativeHttpClient {
         .build()
 
     override suspend fun post(url: String, body: String, headers: Map<String, String>): String = withContext(Dispatchers.IO) {
+        val fullURL = "http://127.0.0.1:5000$url"
         val builder = HttpRequest.newBuilder()
-            .uri(URI.create(url))
+            .uri(URI.create(fullURL))
             .header("Content-Type", "application/json") // Standard header
             .POST(HttpRequest.BodyPublishers.ofString(body))
 

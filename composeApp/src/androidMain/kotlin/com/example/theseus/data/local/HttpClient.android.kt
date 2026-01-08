@@ -12,7 +12,8 @@ class AndroidHttpClient : NativeHttpClient {
         body: String,
         headers: Map<String, String>
     ): String = withContext(Dispatchers.IO) {
-        val connection = URL(url).openConnection() as HttpURLConnection
+        val fullURL = "http:10.0.2.2:5000$url"
+        val connection = URL(fullURL).openConnection() as HttpURLConnection
         try {
             connection.apply {
                 requestMethod = "POST"

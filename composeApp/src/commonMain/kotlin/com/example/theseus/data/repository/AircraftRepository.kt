@@ -36,7 +36,8 @@ class AircraftRepository(private val database: TheseusDatabase) {
             totalHours = aircraft.totalHours,
             totalCycles = aircraft.totalCycles.toLong(),
             createdAt = aircraft.createdAt.toEpochMilliseconds(),
-            updatedAt = aircraft.updatedAt.toEpochMilliseconds()
+            updatedAt = aircraft.updatedAt.toEpochMilliseconds(),
+            isDirty = 1  //mark as dirty for sync
         )
     }
 
@@ -52,10 +53,22 @@ class AircraftRepository(private val database: TheseusDatabase) {
             updatedAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
             id = aircraft.id
         )
+        // isDirty set automatically
     }
 
     suspend fun deleteAircraft(id: String) {
-        database.theseusQueries.deleteAircraft(id)
+        // Soft delete
+        database.theseusQueries.softDeleteAircraft(
+            updatedAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+            id = id
+        )
+    }
+
+    fun getDirtyCount(): Flow<Long> {
+        return database.theseusQueries.selectDirtyAircraft()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { it.size.toLong() }
     }
 
     private fun com.example.theseus.database.Aircraft.toDomain(): Aircraft {

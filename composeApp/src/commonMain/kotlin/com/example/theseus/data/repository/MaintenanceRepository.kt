@@ -45,7 +45,8 @@ class MaintenanceRepository(private val database: TheseusDatabase) {
             technicianName = event.technicianName,
             technicianCertification = event.technicianCertification,
             createdAt = event.createdAt.toEpochMilliseconds(),
-            updatedAt = event.updatedAt.toEpochMilliseconds()
+            updatedAt = event.updatedAt.toEpochMilliseconds(),
+            isDirty = 1  //mark as dirty for sync
         )
     }
 
@@ -61,10 +62,15 @@ class MaintenanceRepository(private val database: TheseusDatabase) {
             updatedAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
             id = event.id
         )
+        // isDirty set automatically
     }
 
     suspend fun deleteMaintenanceEvent(id: String) {
-        database.theseusQueries.deleteMaintenanceEvent(id)
+        // Soft delete - mark as deleted for sync
+        database.theseusQueries.softDeleteMaintenanceEvent(
+            updatedAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+            id = id
+        )
     }
 
     suspend fun getLatestMaintenanceByAircraftId(aircraftId: String): MaintenanceEvent? {
@@ -76,6 +82,13 @@ class MaintenanceRepository(private val database: TheseusDatabase) {
     suspend fun getMaintenanceCountByAircraftId(aircraftId: String): Long {
         return database.theseusQueries.countMaintenanceEventsByAircraftId(aircraftId)
             .executeAsOne()
+    }
+
+    fun getDirtyCount(): Flow<Long> {
+        return database.theseusQueries.selectDirtyMaintenanceEvents()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { it.size.toLong() }
     }
 
     private fun com.example.theseus.database.MaintenanceEvent.toDomain(): MaintenanceEvent {

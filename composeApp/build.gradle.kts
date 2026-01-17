@@ -22,10 +22,9 @@ configurations.all {
 configurations.all {
     if (name.contains("desktop", ignoreCase = true) || name.contains("jvm", ignoreCase = true)) {
         resolutionStrategy {
-            // Force the JetBrains version specifically for the desktop runtime
+            // force jetbrains version for desktop
             force("org.jetbrains.compose.ui:ui-util:1.8.0")
 
-            // Optionally, substitute the androidx version to prevent it from sneaking in
             dependencySubstitution {
                 substitute(module("androidx.compose.ui:ui-util"))
                     .using(module("org.jetbrains.compose.ui:ui-util:1.8.0"))
@@ -91,6 +90,9 @@ kotlin {
             //implementation(libs.androidx.savedstate.android)
 
             implementation("org.jetbrains.compose.ui:ui-util:1.8.0")
+
+            implementation("androidx.compose.material:material-icons-extended:1.7.0")
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

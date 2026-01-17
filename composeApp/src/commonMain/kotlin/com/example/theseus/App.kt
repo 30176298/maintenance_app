@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import com.example.theseus.presentation.aircraft.AircraftListScreen
 import com.example.theseus.presentation.dashboard.DashboardScreen
 import com.example.theseus.presentation.navigation.Screen
+import com.example.theseus.presentation.sync.SyncSettingsScreen
 
 @Composable
 fun App() {
@@ -34,7 +35,8 @@ fun TheseusNavigation(
     when (currentScreen) {
         Screen.Dashboard -> DashboardScreen(
             onNavigateToAircraftList = { onNavigate(Screen.AircraftList, null) },
-            onNavigateToAircraft = { id -> onNavigate(Screen.AircraftDetail, id) }
+            onNavigateToAircraft = { id -> onNavigate(Screen.AircraftDetail, id) },
+            onNavigateToSyncSettings = { onNavigate(Screen.SyncSettings, null) }
         )
         Screen.AircraftList -> AircraftListScreen(
             onNavigateBack = { onNavigate(Screen.Dashboard, null) },
@@ -67,6 +69,11 @@ fun TheseusNavigation(
         Screen.AllMaintenanceLog -> {
             com.example.theseus.presentation.maintenance.MaintenanceLogScreen(
                 aircraftId = null,
+                onNavigateBack = { onNavigate(Screen.Dashboard, null) }
+            )
+        }
+        Screen.SyncSettings -> {
+            SyncSettingsScreen(
                 onNavigateBack = { onNavigate(Screen.Dashboard, null) }
             )
         }

@@ -8,7 +8,10 @@ CREATE TABLE Aircraft (
     totalHours REAL NOT NULL DEFAULT 0.0,
     totalCycles INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL,
-    updatedAt INTEGER NOT NULL
+    updatedAt INTEGER NOT NULL,
+    lastSyncedAt INTEGER,
+    isDirty INTEGER NOT NULL DEFAULT 0,
+    isDeleted INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE MaintenanceEvent (
@@ -23,26 +26,64 @@ CREATE TABLE MaintenanceEvent (
     technicianCertification TEXT,
     createdAt INTEGER NOT NULL,
     updatedAt INTEGER NOT NULL,
+    lastSyncedAt INTEGER,
+    isDirty INTEGER NOT NULL DEFAULT 0,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (aircraftId) REFERENCES Aircraft(id) ON DELETE CASCADE
+);
+
+CREATE TABLE SyncQueue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entityType TEXT NOT NULL,
+    entityId TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    retryCount INTEGER NOT NULL DEFAULT 0,
+    lastAttemptAt INTEGER,
+    error TEXT
+);
+
+CREATE TABLE SyncStatus (
+    key TEXT PRIMARY KEY NOT NULL,
+    lastSuccessfulSync INTEGER,
+    lastAttemptedSync INTEGER,
+    isPending INTEGER NOT NULL DEFAULT 0
 );
 
 -- Queries for Aircraft
 selectAllAircraft:
-SELECT * FROM Aircraft ORDER BY registration ASC;
+SELECT * FROM Aircraft WHERE isDeleted = 0 ORDER BY registration ASC;
 
 selectAircraftById:
-SELECT * FROM Aircraft WHERE id = ?;
+SELECT * FROM Aircraft WHERE id = ? AND isDeleted = 0;
 
 selectAircraftByRegistration:
-SELECT * FROM Aircraft WHERE registration = ?;
+SELECT * FROM Aircraft WHERE registration = ? AND isDeleted = 0;
+
+selectDirtyAircraft:
+SELECT * FROM Aircraft WHERE isDirty = 1 AND isDeleted = 0;
+
+selectDeletedAircraft:
+SELECT * FROM Aircraft WHERE isDeleted = 1;
 
 insertAircraft:
-INSERT INTO Aircraft (id, registration, make, model, serialNumber, yearOfManufacture, totalHours, totalCycles, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Aircraft (id, registration, make, model, serialNumber, yearOfManufacture, totalHours, totalCycles, createdAt, updatedAt, isDirty)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateAircraft:
+UPDATE Aircraft 
+SET registration = ?, make = ?, model = ?, serialNumber = ?, yearOfManufacture = ?, totalHours = ?, totalCycles = ?, updatedAt = ?, isDirty = 1
+WHERE id = ?;
+
+markAircraftSynced:
 UPDATE Aircraft
-SET registration = ?, make = ?, model = ?, serialNumber = ?, yearOfManufacture = ?, totalHours = ?, totalCycles = ?, updatedAt = ?
+SET isDirty = 0, lastSyncedAt = ?
+WHERE id = ?;
+
+softDeleteAircraft:
+UPDATE Aircraft
+SET isDeleted = 1, isDirty = 1, updatedAt = ?
 WHERE id = ?;
 
 deleteAircraft:
@@ -50,32 +91,74 @@ DELETE FROM Aircraft WHERE id = ?;
 
 -- Queries for MaintenanceEvent
 selectAllMaintenanceEvents:
-SELECT * FROM MaintenanceEvent ORDER BY date DESC;
+SELECT * FROM MaintenanceEvent WHERE isDeleted = 0 ORDER BY date DESC;
 
 selectMaintenanceEventsByAircraftId:
-SELECT * FROM MaintenanceEvent WHERE aircraftId = ? ORDER BY date DESC;
+SELECT * FROM MaintenanceEvent WHERE aircraftId = ? AND isDeleted = 0 ORDER BY date DESC;
 
 selectMaintenanceEventById:
-SELECT * FROM MaintenanceEvent WHERE id = ?;
+SELECT * FROM MaintenanceEvent WHERE id = ? AND isDeleted = 0;
+
+selectDirtyMaintenanceEvents:
+SELECT * FROM MaintenanceEvent WHERE isDirty = 1 AND isDeleted = 0;
+
+selectDeletedMaintenanceEvents:
+SELECT * FROM MaintenanceEvent WHERE isDeleted = 1;
 
 insertMaintenanceEvent:
-INSERT INTO MaintenanceEvent (id, aircraftId, date, hoursAtMaintenance, cyclesAtMaintenance, maintenanceType, description, technicianName, technicianCertification, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO MaintenanceEvent (id, aircraftId, date, hoursAtMaintenance, cyclesAtMaintenance, maintenanceType, description, technicianName, technicianCertification, createdAt, updatedAt, isDirty)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateMaintenanceEvent:
 UPDATE MaintenanceEvent
-SET date = ?, hoursAtMaintenance = ?, cyclesAtMaintenance = ?, maintenanceType = ?, description = ?, technicianName = ?, technicianCertification = ?, updatedAt = ?
+SET date = ?, hoursAtMaintenance = ?, cyclesAtMaintenance = ?, maintenanceType = ?, description = ?, technicianName = ?, technicianCertification = ?, updatedAt = ?, isDirty = 1
+WHERE id = ?;
+
+markMaintenanceEventSynced:
+UPDATE MaintenanceEvent
+SET isDirty = 0, lastSyncedAt = ?
+WHERE id = ?;
+
+softDeleteMaintenanceEvent:
+UPDATE MaintenanceEvent
+SET isDeleted = 1, isDirty = 1, updatedAt = ?
 WHERE id = ?;
 
 deleteMaintenanceEvent:
 DELETE FROM MaintenanceEvent WHERE id = ?;
 
-
-
--- Get latest maintenance event for an aircraft
 selectLatestMaintenanceByAircraftId:
-SELECT * FROM MaintenanceEvent WHERE aircraftId = ? ORDER BY date DESC LIMIT 1;
+SELECT * FROM MaintenanceEvent WHERE aircraftId = ? AND isDeleted = 0 ORDER BY date DESC LIMIT 1;
 
--- Count maintenance events per aircraft
 countMaintenanceEventsByAircraftId:
-SELECT COUNT(*) FROM MaintenanceEvent WHERE aircraftId = ?;
+SELECT COUNT(*) FROM MaintenanceEvent WHERE aircraftId = ? AND isDeleted = 0;
+
+-- Queries for SyncQueue
+insertSyncQueueItem:
+INSERT INTO SyncQueue (entityType, entityId, operation, payload, createdAt)
+VALUES (?, ?, ?, ?, ?);
+
+selectPendingSyncItems:
+SELECT * FROM SyncQueue ORDER BY createdAt ASC;
+
+updateSyncQueueRetry:
+UPDATE SyncQueue
+SET retryCount = retryCount + 1, lastAttemptAt = ?, error = ?
+WHERE id = ?;
+
+deleteSyncQueueItem:
+DELETE FROM SyncQueue WHERE id = ?;
+
+clearSyncQueue:
+DELETE FROM SyncQueue;
+
+-- Queries for SyncStatus
+upsertSyncStatus:
+INSERT OR REPLACE INTO SyncStatus (key, lastSuccessfulSync, lastAttemptedSync, isPending)
+VALUES (?, ?, ?, ?);
+
+selectSyncStatus:
+SELECT * FROM SyncStatus WHERE key = ?;
+
+selectAllSyncStatus:
+SELECT * FROM SyncStatus;

@@ -19,7 +19,6 @@ actual class DatabaseDriverFactory {
             properties = Properties()
         )
 
-        // Only create schema if database doesn't exist
         if (!databaseExists) {
             TheseusDatabase.Schema.create(driver)
         }

@@ -127,22 +127,6 @@ fun DashboardScreen(
                     Text("View All Aircraft")
                 }
 
-                Button(
-                    onClick = {
-                        testPostAircraft(scope) { result ->
-                            responseText = result
-                            isLoading = false
-                        }
-                        isLoading = true
-                    },
-                    enabled = !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                ) {
-                    Text(responseText)
-                }
-
 
                 if (uiState is AircraftListUiState.Success) {
                     Text(
@@ -201,43 +185,4 @@ fun AircraftSummaryCard(
 
 fun Double.format(decimals: Int): String {
     return "%.${decimals}f".format(this)
-}
-
-fun testPostAircraft(scope: CoroutineScope, onResult: (String) -> Unit) {
-    scope.launch {
-        val client = getNativeHttpClient()
-        try {
-            val headers = mapOf(
-                "X-API-Key" to "api_warehouse_student_key_1234567890abcdef"
-            )
-
-            val currentTime = System.currentTimeMillis()
-
-            val response = client.post(
-                url = "/api/v1/aircraft",
-                body = """
-                {
-                    "id": "aircraft_test_001",
-                    "registration": "G-TEST",
-                    "make": "Cessna",
-                    "model": "172 Skyhawk",
-                    "serialNumber": "C172-TEST",
-                    "yearOfManufacture": 2005,
-                    "totalHours": 1234.5,
-                    "totalCycles": 842,
-                    "createdAt": $currentTime,
-                    "updatedAt": $currentTime
-                }""".trimIndent(),
-                headers = headers
-            )
-
-            if (response.isSuccess) {
-                onResult("POST Success (${response.statusCode}): ${response.body}")
-            } else {
-                onResult("POST Failed (${response.statusCode}): ${response.body}")
-            }
-        } catch (e: Exception) {
-            onResult("Error: ${e.message}")
-        }
-    }
 }

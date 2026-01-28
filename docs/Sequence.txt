@@ -1,0 +1,51 @@
+sequenceDiagram
+    participant User
+    participant UI as UI Layer
+    participant DB as Local DB
+    participant SM as SyncManager
+    participant API as Server API
+    participant SDB as Server DB
+
+    Note over User,SDB: Offline-First Sync Flow
+
+    %% Offline Phase - Create Aircraft
+    User->>UI: 1. Add aircraft
+    UI->>DB: 2. INSERT aircraft<br/>(isDirty=1)
+    DB-->>UI: 3. Saved
+    UI-->>User: 4. Show aircraft<br/>(immediate feedback)
+
+    rect rgb(255, 235, 238)
+        Note over User,SDB: ⚠️ OFFLINE - Work continues locally ⚠️
+    end
+
+    %% Background Sync Trigger
+    SM->>DB: 5. Query dirty records
+    DB-->>SM: 6. Aircraft (isDirty=1)
+
+    rect rgb(232, 245, 233)
+        Note over User,SDB: ✓ ONLINE - Network connection restored ✓
+    end
+
+    %% Push Phase
+    SM->>API: 7. POST /api/v1/aircraft<br/>{id, registration, make...}
+    API->>SDB: 8. INSERT
+    SDB-->>API: 9. Saved
+    API-->>SM: 10. 201 Created
+    SM->>DB: 11. UPDATE isDirty=0<br/>lastSyncedAt=now()
+
+    rect rgb(224, 242, 241)
+        Note over User,SDB: PULL PHASE - Check for server changes
+    end
+
+    %% Pull Phase
+    SM->>API: 12. GET /api/v1/aircraft
+    API->>SDB: 13. SELECT *
+    SDB-->>API: 14. Aircraft[]
+    API-->>SM: 15. 200 OK + data
+    SM->>DB: 16. UPDATE if !isDirty<br/>&& server.updatedAt > local.updatedAt
+    SM-->>UI: 17. Sync complete
+    UI-->>User: 18. Update UI
+
+    rect rgb(200, 230, 201)
+        Note over User,SDB: ✓ Data synchronized across all devices
+    end

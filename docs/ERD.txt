@@ -1,0 +1,45 @@
+erDiagram
+    Aircraft ||--o{ MaintenanceEvent : "has many"
+    MaintenanceEvent }o--|| MaintenanceType : "categorized as"
+
+    Aircraft {
+        string id PK "Primary Key"
+        string registration UK "UNIQUE"
+        string make
+        string model
+        string serialNumber
+        int yearOfManufacture "nullable"
+        double totalHours
+        int totalCycles
+        timestamp createdAt
+        timestamp updatedAt
+        boolean isDirty "Sync metadata"
+        boolean isDeleted "Sync metadata"
+        timestamp lastSyncedAt "nullable, Sync metadata"
+    }
+
+    MaintenanceEvent {
+        string id PK "Primary Key"
+        string aircraftId FK "Foreign Key"
+        timestamp date
+        double hoursAtMaintenance
+        int cyclesAtMaintenance
+        enum maintenanceType
+        string description
+        string technicianName
+        string technicianCertification "nullable"
+        timestamp createdAt
+        timestamp updatedAt
+        boolean isDirty "Sync metadata"
+        boolean isDeleted "Sync metadata"
+        timestamp lastSyncedAt "nullable, Sync metadata"
+    }
+
+    MaintenanceType {
+        string INSPECTION
+        string REPAIR
+        string MODIFICATION
+        string ROUTINE_SERVICE
+        string COMPONENT_REPLACEMENT
+        string OTHER
+    }
